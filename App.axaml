@@ -1,0 +1,107 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AvaloniaApplication3.App"
+             xmlns:local="using:AvaloniaApplication3"
+             RequestedThemeVariant="Dark">
+             <!-- Устанавливаем темную тему по умолчанию для всего приложения -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+  
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+        
+        <!-- Добавляем глобальные стили для улучшения контрастности -->
+        <Style Selector="Button">
+            <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
+            <Setter Property="Background" Value="{DynamicResource Surface0Color}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TextColor}"/>
+        </Style>
+        
+        <Style Selector="NumericUpDown">
+            <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
+            <Setter Property="Background" Value="{DynamicResource Surface0Color}"/>
+        </Style>
+        
+        <Style Selector="ComboBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
+            <Setter Property="Background" Value="{DynamicResource Surface0Color}"/>
+        </Style>
+        
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="{DynamicResource Surface0Color}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
+        </Style>
+        
+        <Style Selector="DataGridRow">
+            <Setter Property="Background" Value="{DynamicResource Surface1Color}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextColor}"/>
+        </Style>
+        
+        <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="{DynamicResource Surface2Color}"/>
+        </Style>
+        
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="{DynamicResource MauveColor}"/>
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+    </Application.Styles>
+    
+    <Application.Resources>
+        <!-- Catpuccin Mocha color palette -->
+        <Color x:Key="RosewaterColor">#f5e0dc</Color>
+        <Color x:Key="FlamingoColor">#f2cdcd</Color>
+        <Color x:Key="PinkColor">#f5c2e7</Color>
+        <Color x:Key="MauveColor">#cba6f7</Color>
+        <Color x:Key="RedColor">#f38ba8</Color>
+        <Color x:Key="MaroonColor">#eba0ac</Color>
+        <Color x:Key="PeachColor">#fab387</Color>
+        <Color x:Key="YellowColor">#f9e2af</Color>
+        <Color x:Key="GreenColor">#a6e3a1</Color>
+        <Color x:Key="TealColor">#94e2d5</Color>
+        <Color x:Key="SkyColor">#89dceb</Color>
+        <Color x:Key="SapphireColor">#74c7ec</Color>
+        <Color x:Key="BlueColor">#89b4fa</Color>
+        <Color x:Key="LavenderColor">#b4befe</Color>
+        <Color x:Key="TextColor">#cdd6f4</Color>
+        <Color x:Key="Subtext1Color">#bac2de</Color>
+        <Color x:Key="Subtext0Color">#a6adc8</Color>
+        <Color x:Key="Overlay2Color">#9399b2</Color>
+        <Color x:Key="Overlay1Color">#7f849c</Color>
+        <Color x:Key="Overlay0Color">#6c7086</Color>
+        <Color x:Key="Surface2Color">#585b70</Color>
+        <Color x:Key="Surface1Color">#45475a</Color>
+        <Color x:Key="Surface0Color">#313244</Color>
+        <Color x:Key="BaseColor">#1e1e2e</Color>
+        <Color x:Key="MantleColor">#181825</Color>
+        <Color x:Key="CrustColor">#11111b</Color>
+        
+        <!-- Кисти для использования в приложении -->
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+        <SolidColorBrush x:Key="SubtextBrush" Color="{StaticResource Subtext1Color}"/>
+        <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BaseColor}"/>
+        <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource Surface0Color}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource MauveColor}"/>
+        <SolidColorBrush x:Key="SecondaryAccentBrush" Color="{StaticResource LavenderColor}"/>
+        <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource GreenColor}"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource RedColor}"/>
+        <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource YellowColor}"/>
+        <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource BlueColor}"/>
+        
+        <!-- Переопределение системных ресурсов для темной темы -->
+        <SolidColorBrush x:Key="SystemControlBackgroundAltHighBrush" Color="{StaticResource BaseColor}"/>
+        <SolidColorBrush x:Key="SystemControlBackgroundBaseHighBrush" Color="{StaticResource BaseColor}"/>
+        <SolidColorBrush x:Key="SystemControlForegroundBaseHighBrush" Color="{StaticResource TextColor}"/>
+        <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="{StaticResource MauveColor}"/>
+        <SolidColorBrush x:Key="SystemControlHighlightAltAccentBrush" Color="{StaticResource LavenderColor}"/>
+    </Application.Resources>
+</Application>
