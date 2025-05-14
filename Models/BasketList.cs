@@ -67,8 +67,7 @@ namespace AvaloniaApplication3.Models
             {
                 // Если товар уже в корзине, увеличиваем количество
                 existingItem.Quantity += quantity;
-                // Обновляем общую стоимость
-                UpdateTotalCost();
+                // TotalCost обновится автоматически через PropertyChanged
             }
             else
             {

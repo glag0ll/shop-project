@@ -1,0 +1,463 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AvaloniaApplication3.ViewModels"
+        xmlns:models="using:AvaloniaApplication3.Models"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="using:AvaloniaApplication3.Converters"
+        xmlns:i="using:Avalonia.Xaml.Interactivity"
+        xmlns:ia="using:Avalonia.Xaml.Interactions.Core"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+        x:Class="AvaloniaApplication3.Views.BasketWindow"
+        x:DataType="vm:BasketWindowViewModel"
+        Icon="/Assets/shopping-cart.ico"
+        Title="Корзина покупок"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource BaseColor}">
+
+    <Window.Resources>
+        <conv:IsPositiveConverter x:Key="IsPositiveConverter"/>
+        <conv:MessageTypeToColorConverter x:Key="MessageTypeToColorConverter"/>
+        <conv:EnumToStringConverter x:Key="EnumToStringConverter"/>
+        <conv:MessageTypeVisibilityConverter x:Key="MessageTypeVisibilityConverter"/>
+        <conv:DoubleValidationConverter x:Key="DoubleValidationConverter"/>
+        <conv:EmailValidationConverter x:Key="EmailValidationConverter"/>
+        <conv:PhoneValidationConverter x:Key="PhoneValidationConverter"/>
+    </Window.Resources>
+
+    <Window.Styles>
+        <!-- Стили для кнопок при наведении -->
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#80000000"/>
+            <Setter Property="Opacity" Value="0.8"/>
+        </Style>
+        
+        <!-- Специальные стили для различных типов кнопок при наведении -->
+        <Style Selector="Button[Background=Green]:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="DarkGreen"/>
+        </Style>
+        
+        <Style Selector="Button[Background=Red]:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="DarkRed"/>
+        </Style>
+        
+        <Style Selector="Button[Background=DodgerBlue]:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="RoyalBlue"/>
+        </Style>
+        
+        <Style Selector="Button[Background=Gray]:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="DimGray"/>
+        </Style>
+        
+        <!-- Стили для заголовков полей ввода -->
+        <Style Selector="TextBlock.field-header">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="Background" Value="{DynamicResource Surface2Color}"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+        
+        <!-- Стили для полей с ошибками валидации -->
+        <Style Selector="TextBox:error">
+            <Setter Property="BorderBrush" Value="{DynamicResource RedColor}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        
+        <Style Selector="NumericUpDown:error">
+            <Setter Property="BorderBrush" Value="{DynamicResource RedColor}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        
+        <Style Selector="ComboBox:error">
+            <Setter Property="BorderBrush" Value="{DynamicResource RedColor}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        
+        <!-- Стиль для текста ошибки -->
+        <Style Selector="TextBlock.error-text">
+            <Setter Property="Foreground" Value="{DynamicResource RedColor}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,2,0,5"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="20">
+        <!-- Message Dialog -->
+        <Border Grid.Row="0" Grid.RowSpan="3"
+                Background="#80000000"
+                IsVisible="{Binding ShowMessage}">
+            <Border Background="{DynamicResource BaseColor}"
+                    Width="400"
+                    Height="250"
+                    CornerRadius="5"
+                    BoxShadow="0 4 8 0 #40000000">
+                <Grid Classes="message-container" RowDefinitions="Auto,*,Auto" Margin="20">
+                    <StackPanel Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,10">
+                        <!-- Icon -->
+                        <Viewbox Width="48" Height="48" Margin="0,0,0,10">
+                            <Grid>
+                                <!-- Success Icon -->
+                                <Path IsVisible="{Binding CurrentMessage.Type, Converter={StaticResource MessageTypeVisibilityConverter}, ConverterParameter=Success}"
+                                      Data="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" 
+                                      Stretch="Uniform"
+                                      Fill="{DynamicResource GreenColor}"/>
+                                
+                                <!-- Error Icon -->
+                                <Path IsVisible="{Binding CurrentMessage.Type, Converter={StaticResource MessageTypeVisibilityConverter}, ConverterParameter=Error}"
+                                      Data="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" 
+                                      Stretch="Uniform"
+                                      Fill="{DynamicResource RedColor}"/>
+                                
+                                <!-- Warning Icon -->
+                                <Path IsVisible="{Binding CurrentMessage.Type, Converter={StaticResource MessageTypeVisibilityConverter}, ConverterParameter=Warning}"
+                                      Data="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" 
+                                      Stretch="Uniform"
+                                      Fill="{DynamicResource PeachColor}"/>
+                                
+                                <!-- Info Icon -->
+                                <Path IsVisible="{Binding CurrentMessage.Type, Converter={StaticResource MessageTypeVisibilityConverter}, ConverterParameter=Info}"
+                                      Data="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" 
+                                      Stretch="Uniform"
+                                      Fill="{DynamicResource BlueColor}"/>
+                            </Grid>
+                        </Viewbox>
+                        
+                        <!-- Title with color based on message type -->
+                        <TextBlock Text="{Binding CurrentMessage.Title}" 
+                                   HorizontalAlignment="Center" 
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Foreground="{Binding CurrentMessage.Type, Converter={StaticResource MessageTypeToColorConverter}}"/>
+                    </StackPanel>
+                    
+                    <TextBlock Grid.Row="1" 
+                             Text="{Binding CurrentMessage.Message}" 
+                             HorizontalAlignment="Center" 
+                             VerticalAlignment="Center"
+                             TextWrapping="Wrap"
+                             FontSize="16"
+                             TextAlignment="Center"
+                             Margin="10,10"
+                             Foreground="{DynamicResource TextBrush}"/>
+                    
+                    <Button Grid.Row="2" 
+                          Content="OK" 
+                          HorizontalAlignment="Center" 
+                          Command="{Binding CloseMessageDialogCommand}"
+                          Margin="0,10,0,0"
+                          Background="{DynamicResource BlueColor}"
+                          Foreground="{DynamicResource BaseColor}"
+                          Padding="30,8"
+                          FontSize="16"/>
+                </Grid>
+            </Border>
+        </Border>
+        
+        <!-- Checkout Dialog -->
+        <Border Grid.Row="0" Grid.RowSpan="3"
+                Background="#80000000"
+                IsVisible="{Binding TestDialogVisible}"
+                ZIndex="1000">
+            <Border Background="{DynamicResource BaseColor}"
+                    Width="600"
+                    Height="500"
+                    CornerRadius="5"
+                    BoxShadow="0 4 8 0 #40000000">
+                <Grid RowDefinitions="Auto,*,Auto" Margin="20">
+                    <TextBlock Grid.Row="0" Text="Оформление заказа" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="{DynamicResource TextBrush}"/>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="10">
+                            <StackPanel>
+                                <Border Background="{DynamicResource Surface1Color}" BorderBrush="{DynamicResource Surface2Color}" BorderThickness="1" Margin="0,0,0,5">
+                                    <TextBlock Text="ФИО получателя *" Classes="field-header"/>
+                                </Border>
+                                <TextBlock Text="Введите полные ФИО получателя заказа" Opacity="0.7" FontSize="12" Margin="0,2,0,5" Foreground="{DynamicResource Subtext1Color}"/>
+                                <TextBox Name="NameTextBox" Text="{Binding CurrentOrder.CustomerName}" 
+                                         Watermark="Например: Иванов Иван Иванович">
+                                    <i:Interaction.Behaviors>
+                                        <ia:EventTriggerBehavior EventName="LostFocus">
+                                            <ia:InvokeCommandAction Command="{Binding ValidateNameCommand}"/>
+                                        </ia:EventTriggerBehavior>
+                                    </i:Interaction.Behaviors>
+                                </TextBox>
+                                <TextBlock Text="{Binding NameError}" 
+                                           Classes="error-text" 
+                                           IsVisible="{Binding NameError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Foreground="{DynamicResource RedColor}"/>
+                            </StackPanel>
+                            
+                            <StackPanel>
+                                <Border Background="{DynamicResource Surface1Color}" BorderBrush="{DynamicResource Surface2Color}" BorderThickness="1" Margin="0,0,0,5">
+                                    <TextBlock Text="Электронная почта" Classes="field-header"/>
+                                </Border>
+                                <TextBlock Text="Введите e-mail для связи (должен содержать символ @)" Opacity="0.7" FontSize="12" Margin="0,2,0,5" Foreground="{DynamicResource Subtext1Color}"/>
+                                <TextBox Name="EmailTextBox" Text="{Binding CurrentOrder.CustomerEmail}" 
+                                         Watermark="Например: example@mail.ru">
+                                    <i:Interaction.Behaviors>
+                                        <ia:EventTriggerBehavior EventName="LostFocus">
+                                            <ia:InvokeCommandAction Command="{Binding ValidateEmailCommand}"/>
+                                        </ia:EventTriggerBehavior>
+                                    </i:Interaction.Behaviors>
+                                </TextBox>
+                                <TextBlock Text="{Binding EmailError}" 
+                                           Classes="error-text" 
+                                           IsVisible="{Binding EmailError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Foreground="{DynamicResource RedColor}"/>
+                            </StackPanel>
+                            
+                            <StackPanel>
+                                <Border Background="{DynamicResource Surface1Color}" BorderBrush="{DynamicResource Surface2Color}" BorderThickness="1" Margin="0,0,0,5">
+                                    <TextBlock Text="Телефон *" Classes="field-header"/>
+                                </Border>
+                                <TextBlock Text="Введите контактный телефон для связи (должен начинаться с + и содержать 11 цифр)" Opacity="0.7" FontSize="12" Margin="0,2,0,5" Foreground="{DynamicResource Subtext1Color}"/>
+                                <TextBox Name="PhoneTextBox" Text="{Binding CurrentOrder.CustomerPhone}" 
+                                         Watermark="Например: +7 (123) 456-78-90">
+                                    <i:Interaction.Behaviors>
+                                        <ia:EventTriggerBehavior EventName="LostFocus">
+                                            <ia:InvokeCommandAction Command="{Binding ValidatePhoneCommand}"/>
+                                        </ia:EventTriggerBehavior>
+                                    </i:Interaction.Behaviors>
+                                </TextBox>
+                                <TextBlock Text="{Binding PhoneError}" 
+                                           Classes="error-text" 
+                                           IsVisible="{Binding PhoneError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Foreground="{DynamicResource RedColor}"/>
+                            </StackPanel>
+                            
+                            <StackPanel>
+                                <Border Background="{DynamicResource Surface1Color}" BorderBrush="{DynamicResource Surface2Color}" BorderThickness="1" Margin="0,0,0,5">
+                                    <TextBlock Text="Адрес доставки *" Classes="field-header"/>
+                                </Border>
+                                <TextBlock Text="Введите полный адрес доставки" Opacity="0.7" FontSize="12" Margin="0,2,0,5" Foreground="{DynamicResource Subtext1Color}"/>
+                                <TextBox Name="AddressTextBox" Text="{Binding CurrentOrder.DeliveryAddress}" Height="60" 
+                                         AcceptsReturn="True" TextWrapping="Wrap"
+                                         Watermark="Например: г. Москва, ул. Ленина, д. 1, кв. 123">
+                                    <i:Interaction.Behaviors>
+                                        <ia:EventTriggerBehavior EventName="LostFocus">
+                                            <ia:InvokeCommandAction Command="{Binding ValidateAddressCommand}"/>
+                                        </ia:EventTriggerBehavior>
+                                    </i:Interaction.Behaviors>
+                                </TextBox>
+                                <TextBlock Text="{Binding AddressError}" 
+                                           Classes="error-text" 
+                                           IsVisible="{Binding AddressError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Foreground="{DynamicResource RedColor}"/>
+                            </StackPanel>
+                            
+                            <StackPanel>
+                                <Border Background="{DynamicResource Surface1Color}" BorderBrush="{DynamicResource Surface2Color}" BorderThickness="1" Margin="0,0,0,5">
+                                    <TextBlock Text="Способ оплаты *" Classes="field-header"/>
+                                </Border>
+                                <TextBlock Text="Выберите предпочтительный способ оплаты" Opacity="0.7" FontSize="12" Margin="0,2,0,5" Foreground="{DynamicResource Subtext1Color}"/>
+                                <ComboBox Name="PaymentMethodComboBox" ItemsSource="{Binding PaymentMethods}" 
+                                          SelectedItem="{Binding SelectedPaymentMethod}"
+                                          HorizontalAlignment="Stretch">
+                                    <i:Interaction.Behaviors>
+                                        <ia:EventTriggerBehavior EventName="SelectionChanged">
+                                            <ia:InvokeCommandAction Command="{Binding ValidatePaymentMethodCommand}"/>
+                                        </ia:EventTriggerBehavior>
+                                    </i:Interaction.Behaviors>
+                                </ComboBox>
+                                <TextBlock Text="{Binding PaymentError}" 
+                                           Classes="error-text" 
+                                           IsVisible="{Binding PaymentError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Foreground="{DynamicResource RedColor}"/>
+                            </StackPanel>
+                            
+                            <Border Background="{DynamicResource Surface0Color}" BorderBrush="{DynamicResource Surface2Color}" BorderThickness="1" Padding="10" Margin="0,10,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Товары в заказе:" FontWeight="Bold" Margin="0,0,0,5" Foreground="{DynamicResource TextBrush}"/>
+                                    <ItemsControl ItemsSource="{Binding BasketList.Items}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2">
+                                                    <TextBlock Grid.Column="0" Text="{Binding Product.Name}" Foreground="{DynamicResource TextBrush}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Quantity, StringFormat='{}{0} шт.'}" Margin="5,0" Foreground="{DynamicResource TextBrush}"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding TotalPrice, StringFormat={}{0:C}}" Foreground="{DynamicResource TextBrush}"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                                        <TextBlock Text="Итого к оплате: " FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
+                                        <TextBlock Text="{Binding BasketList.TotalCost, StringFormat={}{0:C}}" FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            
+                            <TextBlock Text="* - поля, обязательные для заполнения" Margin="0,10,0,0" 
+                                     Opacity="0.7" FontStyle="Italic" Foreground="{DynamicResource Subtext1Color}"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                    
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Content="Отмена" Command="{Binding CloseCheckoutDialogCommand}" Margin="0,0,10,0" 
+                                Background="{DynamicResource Surface1Color}" Foreground="{DynamicResource TextBrush}" Padding="20,8"/>
+                        <Button Content="Оформить заказ" Command="{Binding CompleteOrderCommand}" 
+                                Background="{DynamicResource GreenColor}" Foreground="{DynamicResource BaseColor}" Padding="20,8"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Border>
+
+        <!-- Order Completed Dialog -->
+        <Border Grid.Row="0" Grid.RowSpan="3"
+                Background="#80000000"
+                IsVisible="{Binding ShowOrderCompletedDialog}">
+            <Border Background="{DynamicResource BaseColor}"
+                    Width="500"
+                    Height="350"
+                    CornerRadius="5"
+                    BoxShadow="0 4 8 0 #40000000">
+                <Grid RowDefinitions="Auto,*,Auto" Margin="20">
+                    <StackPanel Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                            <Path Data="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" 
+                                  Stretch="Uniform"
+                                  Fill="{DynamicResource GreenColor}"/>
+                        </Viewbox>
+                        <TextBlock Text="Заказ успешно оформлен!" 
+                                   HorizontalAlignment="Center" 
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource GreenColor}"/>
+                    </StackPanel>
+                    
+                    <StackPanel Grid.Row="1" Spacing="10">
+                        <Border Background="{DynamicResource Surface0Color}" BorderBrush="{DynamicResource Surface2Color}" BorderThickness="1" Padding="15" Margin="0,0,0,10">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Номер заказа: " FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock Text="{Binding CurrentOrder.OrderNumber}" Foreground="{DynamicResource TextBrush}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Дата заказа: " FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock Text="{Binding CurrentOrder.OrderDate, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" Foreground="{DynamicResource TextBrush}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Сумма заказа: " FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock Text="{Binding CurrentOrder.TotalAmount, StringFormat={}{0:C}}" Foreground="{DynamicResource TextBrush}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Способ оплаты: " FontWeight="Bold" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock Text="{Binding CurrentOrder.PaymentMethod}" Foreground="{DynamicResource TextBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Спасибо за ваш заказ! Детали заказа отправлены на указанную электронную почту." 
+                                   TextWrapping="Wrap" 
+                                   HorizontalAlignment="Center" 
+                                   TextAlignment="Center"
+                                   Foreground="{DynamicResource TextBrush}"/>
+                    </StackPanel>
+                    
+                    <Button Grid.Row="2" 
+                            Content="Готово" 
+                            HorizontalAlignment="Center" 
+                            Command="{Binding CloseOrderCompletedDialogCommand}"
+                            Margin="0,10,0,0"
+                            Background="{DynamicResource BlueColor}"
+                            Foreground="{DynamicResource BaseColor}"
+                            Padding="30,8"
+                            FontSize="16"/>
+                </Grid>
+            </Border>
+        </Border>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <Button Content="← Вернуться к товарам" 
+                    Command="{Binding GoBackCommand}"
+                    Margin="0,0,10,0"
+                    Background="{DynamicResource BlueColor}"
+                    Foreground="{DynamicResource BaseColor}"
+                    Padding="10,5"/>
+            <TextBlock Text="Корзина покупок" 
+                       VerticalAlignment="Center"
+                       FontSize="24" 
+                       FontWeight="Bold" 
+                       Margin="0,0,0,10" 
+                       Foreground="{DynamicResource TextBrush}"/>
+        </StackPanel>
+        
+        <!-- Basket Items -->
+        <DataGrid Grid.Row="1" 
+                  ItemsSource="{Binding BasketList.Items}" 
+                  AutoGenerateColumns="False"
+                  SelectedItem="{Binding SelectedBasketItem}"
+                  IsReadOnly="True"
+                  Margin="0,10"
+                  Background="{DynamicResource Surface0Color}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Товар" Binding="{Binding Product.Name}" Width="*" Foreground="{DynamicResource TextBrush}"/>
+                <DataGridTextColumn Header="Цена" Binding="{Binding Product.Price, StringFormat=\{0:C\}}" Width="Auto" Foreground="{DynamicResource TextBrush}"/>
+                <DataGridTextColumn Header="Количество" Binding="{Binding Quantity}" Width="Auto" Foreground="{DynamicResource TextBrush}"/>
+                <DataGridTextColumn Header="Общая стоимость" Binding="{Binding TotalPrice, StringFormat=\{0:C\}}" Width="Auto" Foreground="{DynamicResource TextBrush}"/>
+                <DataGridTemplateColumn Header="Действия" Width="Auto">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:BasketItem">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="+" 
+                                        Command="{Binding $parent[Window].((vm:BasketWindowViewModel)DataContext).IncreaseBasketItemQuantityCommand}" 
+                                        CommandParameter="{Binding}"
+                                        Background="{DynamicResource GreenColor}"
+                                        Foreground="{DynamicResource BaseColor}"
+                                        Width="30"
+                                        Margin="0,0,5,0"
+                                        ToolTip.Tip="Увеличить количество"/>
+                                
+                                <Button Content="-" 
+                                        Command="{Binding $parent[Window].((vm:BasketWindowViewModel)DataContext).DecreaseBasketItemQuantityCommand}" 
+                                        CommandParameter="{Binding}"
+                                        Background="{DynamicResource BlueColor}"
+                                        Foreground="{DynamicResource BaseColor}"
+                                        Width="30"
+                                        Margin="0,0,5,0"
+                                        ToolTip.Tip="Уменьшить количество"/>
+                                
+                                <Button Content="Удалить" 
+                                    Command="{Binding $parent[Window].((vm:BasketWindowViewModel)DataContext).RemoveFromBasketCommand}" 
+                                    CommandParameter="{Binding}"
+                                    Background="{DynamicResource RedColor}"
+                                    Foreground="{DynamicResource BaseColor}"
+                                    ToolTip.Tip="Удалить из корзины"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+        
+        <!-- Footer with total cost and actions -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Итого:" 
+                           FontSize="18" 
+                           FontWeight="Bold" 
+                           Foreground="{DynamicResource TextBrush}" 
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding BasketList.TotalCost, StringFormat=\{0:C\}}" 
+                           FontSize="18" 
+                           FontWeight="Bold" 
+                           Foreground="{DynamicResource TextBrush}" 
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Очистить корзину" 
+                        Command="{Binding ClearBasketCommand}" 
+                        Margin="5,0"
+                        Background="{DynamicResource RedColor}"
+                        Foreground="{DynamicResource BaseColor}"
+                        Padding="10,5"/>
+                
+                <Button Content="Оформить заказ" 
+                        Command="{Binding CheckoutCommand}" 
+                        IsEnabled="{Binding BasketList.Items.Count, Converter={StaticResource IsPositiveConverter}}"
+                        Margin="5,0"
+                        Background="{DynamicResource GreenColor}"
+                        Foreground="{DynamicResource BaseColor}"
+                        Padding="10,5"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window> 

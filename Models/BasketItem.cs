@@ -40,9 +40,6 @@ namespace AvaloniaApplication3.Models
         partial void OnQuantityChanged(int value)
         {
             OnPropertyChanged(nameof(TotalPrice));
-            
-            // Обновляем родительский объект BasketList
-            // Это событие будет перехвачено в MainWindowViewModel
         }
     }
 } 

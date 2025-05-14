@@ -12,7 +12,7 @@
         x:Class="AvaloniaApplication3.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/shopping-cart.ico"
-        Title="Управление товарами и корзиной покупок"
+        Title="Управление товарами"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource BaseColor}">
 
@@ -92,18 +92,33 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,*" Margin="10">
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="Товары" FontSize="24" FontWeight="Bold" Margin="0,0,0,10" Foreground="{DynamicResource TextBrush}"/>
-        <TextBlock Grid.Row="0" Grid.Column="1" Text="Корзина покупок" FontSize="24" FontWeight="Bold" Margin="10,0,0,10" Foreground="{DynamicResource TextBrush}"/>
+    <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="*,Auto">
+        <!-- Header with Title and Basket Button -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
+            <TextBlock Grid.Column="0" Text="Товары" FontSize="24" FontWeight="Bold" Margin="0,0,0,10" Foreground="{DynamicResource TextBrush}"/>
+            
+            <Button Grid.Column="2" 
+                    Command="{Binding OpenBasketWindowCommand}" 
+                    IsEnabled="{Binding BasketList.Items.Count, Converter={StaticResource IsPositiveConverter}}"
+                    Margin="0,0,0,10"
+                    Padding="10,5"
+                    Background="{DynamicResource BlueColor}"
+                    Foreground="{DynamicResource BaseColor}">
+                <StackPanel Orientation="Horizontal">
+                    <PathIcon Data="M7,18C5.9,18 5.01,18.9 5.01,20C5.01,21.1 5.9,22 7,22C8.1,22 9,21.1 9,20C9,18.9 8.1,18 7,18M1,2V4H3L6.6,11.59L5.25,14.04C5.09,14.32 5,14.65 5,15C5,16.1 5.9,17 7,17H19V15H7.42C7.28,15 7.17,14.89 7.17,14.75L7.2,14.63L8.1,13H15.55C16.3,13 16.96,12.59 17.3,11.97L20.88,5.5C20.96,5.34 21,5.17 21,5C21,4.45 20.55,4 20,4H5.21L4.27,2M17,18C15.9,18 15.01,18.9 15.01,20C15.01,21.1 15.9,22 17,22C18.1,22 19,21.1 19,20C19,18.9 18.1,18 17,18Z" 
+                              Width="24" Height="24" Margin="0,0,5,0"/>
+                    <TextBlock Text="{Binding BasketList.Items.Count, StringFormat=Корзина ({0})}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </Grid>
         
         <!-- Products Panel -->
-        <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="*,Auto">
+        <Grid Grid.Row="1" RowDefinitions="*,Auto">
             <DataGrid Grid.Row="0" 
                       ItemsSource="{Binding ProductList.Products}" 
                       AutoGenerateColumns="False"
                       SelectedItem="{Binding SelectedProduct}"
                       IsReadOnly="True"
-                      Margin="0,0,10,0"
                       Background="{DynamicResource Surface0Color}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*" Foreground="{DynamicResource TextBrush}"/>
@@ -144,83 +159,15 @@
             <Button Grid.Row="1" 
                     Content="Добавить новый товар" 
                     HorizontalAlignment="Right" 
-                    Margin="0,10,10,0"
+                    Margin="0,10,0,0"
                     Background="{DynamicResource GreenColor}"
                     Foreground="{DynamicResource BaseColor}"
                     Padding="10,5"
                     Command="{Binding ShowProductAddDialogCommand}"/>
         </Grid>
         
-        <!-- Basket Panel -->
-        <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="*,Auto,Auto" Margin="10,0,0,0">
-            <DataGrid Grid.Row="0" 
-                      ItemsSource="{Binding BasketList.Items}" 
-                      AutoGenerateColumns="False"
-                      SelectedItem="{Binding SelectedBasketItem}"
-                      IsReadOnly="True"
-                      Background="{DynamicResource Surface0Color}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Товар" Binding="{Binding Product.Name}" Width="*" Foreground="{DynamicResource TextBrush}"/>
-                    <DataGridTextColumn Header="Цена" Binding="{Binding Product.Price, StringFormat=\{0:C\}}" Width="Auto" Foreground="{DynamicResource TextBrush}"/>
-                    <DataGridTextColumn Header="Количество" Binding="{Binding Quantity}" Width="Auto" Foreground="{DynamicResource TextBrush}"/>
-                    <DataGridTextColumn Header="Общая стоимость" Binding="{Binding TotalPrice, StringFormat=\{0:C\}}" Width="Auto" Foreground="{DynamicResource TextBrush}"/>
-                    <DataGridTemplateColumn Header="Действия" Width="Auto">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate x:DataType="models:BasketItem">
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Content="+" 
-                                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IncreaseBasketItemQuantityCommand}" 
-                                            CommandParameter="{Binding}"
-                                            Background="{DynamicResource GreenColor}"
-                                            Foreground="{DynamicResource BaseColor}"
-                                            Width="30"
-                                            Margin="0,0,5,0"
-                                            ToolTip.Tip="Увеличить количество"/>
-                                    
-                                    <Button Content="-" 
-                                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).DecreaseBasketItemQuantityCommand}" 
-                                            CommandParameter="{Binding}"
-                                            Background="{DynamicResource BlueColor}"
-                                            Foreground="{DynamicResource BaseColor}"
-                                            Width="30"
-                                            Margin="0,0,5,0"
-                                            ToolTip.Tip="Уменьшить количество"/>
-                                    
-                                    <Button Content="Удалить" 
-                                        Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).RemoveFromBasketCommand}" 
-                                        CommandParameter="{Binding}"
-                                        Background="{DynamicResource RedColor}"
-                                        Foreground="{DynamicResource BaseColor}"
-                                        ToolTip.Tip="Удалить из корзины"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                <TextBlock Text="Итоговая стоимость: " FontWeight="Bold" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
-                <TextBlock Text="{Binding BasketList.TotalCost, StringFormat=\{0:C\}}" VerticalAlignment="Center" Margin="5,0,0,0" Foreground="{DynamicResource TextBrush}"/>
-            </StackPanel>
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                <Button Content="Оформить заказ" 
-                    HorizontalAlignment="Right" 
-                    Margin="0,0,10,0"
-                    Background="{DynamicResource BlueColor}"
-                    Foreground="{DynamicResource BaseColor}"
-                    Padding="10,5"
-                    Command="{Binding ShowCheckoutCommand}"/>
-                <Button Content="Очистить корзину" 
-                    HorizontalAlignment="Right"
-                    Background="{DynamicResource RedColor}"
-                    Foreground="{DynamicResource BaseColor}"
-                    Padding="10,5"
-                    Command="{Binding ClearBasketCommand}"/>
-            </StackPanel>
-        </Grid>
-        
         <!-- Product Edit Dialog -->
-        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2"
+        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
                 Background="#80000000"
                 IsVisible="{Binding ShowEditDialog}">
             <Border Background="{DynamicResource BaseColor}"
@@ -290,7 +237,7 @@
         </Border>
         
         <!-- Product Add Dialog -->
-        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2"
+        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
                 Background="#80000000"
                 IsVisible="{Binding ShowAddDialog}">
             <Border Background="{DynamicResource BaseColor}"
@@ -360,7 +307,7 @@
         </Border>
         
         <!-- Checkout Dialog -->
-        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2"
+        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
                 Background="#80000000"
                 IsVisible="{Binding ShowCheckoutDialog}">
             <Border Background="{DynamicResource BaseColor}"
@@ -501,7 +448,7 @@
         </Border>
 
         <!-- Order Completed Dialog -->
-        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2"
+        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
                 Background="#80000000"
                 IsVisible="{Binding ShowOrderCompletedDialog}">
             <Border Background="{DynamicResource BaseColor}"
@@ -565,7 +512,7 @@
         </Border>
         
         <!-- Message Dialog -->
-        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2"
+        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
                 Background="#80000000"
                 IsVisible="{Binding ShowMessage}">
             <Border Background="{DynamicResource BaseColor}"

@@ -1,58 +1,43 @@
-﻿using System;
+using System;
 using System.Linq;
-using System.Windows.Input;
+using System.Collections.ObjectModel;
 using AvaloniaApplication3.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Collections.ObjectModel;
+using System.Windows.Input;
 using Avalonia.Controls;
-using AvaloniaApplication3.Views;
+using Avalonia.Controls.Primitives;
 
 namespace AvaloniaApplication3.ViewModels
 {
-    public partial class MainWindowViewModel : ViewModelBase
+    public partial class BasketWindowViewModel : ViewModelBase
     {
-        [ObservableProperty]
-        private ProductList _productList = null!;
-
         [ObservableProperty]
         private BasketList _basketList = null!;
 
         [ObservableProperty]
-        private OrderHistory _orderHistory = null!;
-
-        [ObservableProperty]
-        private Product? _selectedProduct;
+        private ProductList _productList = null!;
 
         [ObservableProperty]
         private BasketItem? _selectedBasketItem;
 
         [ObservableProperty]
-        private Order? _selectedOrder;
-
-        [ObservableProperty]
-        private Order _currentOrder = null!;
-
-        [ObservableProperty]
-        private MessageInfo _currentMessage = null!;
+        private MessageInfo _currentMessage;
 
         [ObservableProperty]
         private bool _showMessage;
 
         [ObservableProperty]
-        private bool _showEditDialog;
-
-        [ObservableProperty]
-        private bool _showAddDialog;
-
-        [ObservableProperty]
         private bool _showCheckoutDialog;
+
+        [ObservableProperty]
+        private bool _testDialogVisible = false;
 
         [ObservableProperty]
         private bool _showOrderCompletedDialog;
 
         [ObservableProperty]
-        private Product _editingProduct = null!;
+        private Order _currentOrder = null!;
 
         [ObservableProperty]
         private ObservableCollection<string> _paymentMethods = null!;
@@ -75,69 +60,34 @@ namespace AvaloniaApplication3.ViewModels
         [ObservableProperty]
         private string _paymentError = string.Empty;
 
-        // Reference to the main window for navigation
-        private Window? _mainWindow;
-
-        // Method to set the main window reference
-        public void SetMainWindow(Window mainWindow)
+        // Event to notify when to navigate back to the main window
+        public event EventHandler? NavigateBack;
+        
+        // We need a reference to the MainWindowViewModel to ensure data consistency
+        private readonly MainWindowViewModel _mainViewModel;
+        
+        public BasketWindowViewModel(MainWindowViewModel mainViewModel)
         {
-            _mainWindow = mainWindow;
+            _mainViewModel = mainViewModel;
+            BasketList = mainViewModel.BasketList;
+            ProductList = mainViewModel.ProductList;
+            
+            // Инициализируем объект сообщения
+            _currentMessage = new MessageInfo("", MessageType.Info);
+            _showMessage = false;
+            
+            // Инициализация для формы оформления заказа
+            CurrentOrder = new Order();
+            
+            // Инициализация методов оплаты
+            PaymentMethods = new ObservableCollection<string>(
+                Enum.GetValues(typeof(PaymentMethod))
+                    .Cast<PaymentMethod>()
+                    .Select(p => p.ToString())
+            );
+            SelectedPaymentMethod = PaymentMethods.FirstOrDefault() ?? string.Empty;
         }
-
-        [RelayCommand]
-        private void OpenBasketWindow()
-        {
-            if (_mainWindow == null)
-            {
-                ShowMessageBox("Ошибка открытия окна корзины", MessageType.Error);
-                return;
-            }
-
-            // Create the basket window
-            var basketWindow = new BasketWindow();
-            var basketViewModel = new BasketWindowViewModel(this);
-            
-            // Set up the back navigation
-            basketViewModel.NavigateBack += (sender, args) => {
-                basketWindow.Close();
-                _mainWindow.Show();
-            };
-            
-            basketWindow.DataContext = basketViewModel;
-            
-            // Hide the main window and show the basket window
-            _mainWindow.Hide();
-            basketWindow.Show();
-        }
-
-        [RelayCommand]
-        private void AddToBasket(Product product)
-        {
-            if (product == null)
-            {
-                ShowMessageBox("Не выбран товар для добавления в корзину", MessageType.Error);
-                return;
-            }
-
-            if (product.Quantity <= 0)
-            {
-                ShowMessageBox($"Товар '{product.Name}' закончился на складе", MessageType.Warning);
-                return;
-            }
-            
-            // Уменьшаем количество товара на складе
-            product.Quantity--;
-            
-            // Добавляем товар в корзину
-            BasketList.AddToBasket(product, 1);
-
-            // Обновляем товар в списке
-            ProductList.UpdateProduct(product);
-                     
-            // Показать уведомление
-            ShowMessageBox($"Товар '{product.Name}' добавлен в корзину. Осталось на складе: {product.Quantity}", MessageType.Success);
-        }
-
+        
         [RelayCommand]
         private void RemoveFromBasket(BasketItem basketItem)
         {
@@ -148,7 +98,7 @@ namespace AvaloniaApplication3.ViewModels
             }
 
             string productName = basketItem.Product.Name;
-                 
+            
             // Возвращаем количество товара обратно на склад
             var product = ProductList.Products.FirstOrDefault(p => p.Id == basketItem.Product.Id);
             if (product != null)
@@ -159,8 +109,8 @@ namespace AvaloniaApplication3.ViewModels
             }
 
             BasketList.RemoveFromBasket(basketItem.Id);
-                 
-            // Показать уведомление пользователю
+                
+            // Показать уведомление пользователю в окне корзины
             ShowMessageBox($"Товар '{productName}' удален из корзины", MessageType.Success);
         }
 
@@ -187,10 +137,10 @@ namespace AvaloniaApplication3.ViewModels
 
             BasketList.ClearBasket();
              
-            // Показать уведомление пользователю
+            // Показать уведомление пользователю в окне корзины
             ShowMessageBox("Корзина успешно очищена", MessageType.Success);
         }
-
+        
         // Общий метод для изменения количества товара в корзине
         private void ChangeBasketItemQuantity(BasketItem basketItem, int change)
         {
@@ -247,250 +197,91 @@ namespace AvaloniaApplication3.ViewModels
             // Обновляем товар на списке
             ProductList.UpdateProduct(product);
             
-            // Обновление общей стоимости корзины происходит автоматически через привязки
-            
             // Формируем сообщение
             string action = change > 0 ? "увеличено" : "уменьшено";
             string debugInfo = $"В корзине: {basketItem.Quantity} шт. Осталось на складе: {product.Quantity} шт.";
             ShowMessageBox($"Количество товара '{basketItem.Product.Name}' {action}. {debugInfo}", MessageType.Success);
         }
-
+        
         [RelayCommand]
         public void IncreaseBasketItemQuantity(BasketItem basketItem)
         {
             ChangeBasketItemQuantity(basketItem, 1);
         }
-
+        
         [RelayCommand]
         public void DecreaseBasketItemQuantity(BasketItem basketItem)
         {
             ChangeBasketItemQuantity(basketItem, -1);
         }
-
-        public MainWindowViewModel()
+        
+        [RelayCommand]
+        private void Checkout()
         {
-            // Initialize all objects to prevent null reference exceptions
-            ProductList = new ProductList();
-            BasketList = new BasketList();
-            OrderHistory = new OrderHistory();
-            EditingProduct = new Product();
-            CurrentOrder = new Order();
-            SelectedProduct = null;
-            SelectedBasketItem = null;
-            SelectedOrder = null;
-            CurrentMessage = new MessageInfo("", MessageType.Info);
-            ShowMessage = false;
-            ShowEditDialog = false;
-            ShowAddDialog = false;
-            ShowCheckoutDialog = false;
-            ShowOrderCompletedDialog = false;
+            if (BasketList == null)
+            {
+                ShowMessageBox("Ошибка: BasketList не инициализирован", MessageType.Error);
+                return;
+            }
             
-            // Инициализация методов оплаты
-            PaymentMethods = new ObservableCollection<string>(
-                Enum.GetValues(typeof(PaymentMethod))
-                    .Cast<PaymentMethod>()
-                    .Select(p => p.ToString())
-            );
-            SelectedPaymentMethod = PaymentMethods.FirstOrDefault() ?? string.Empty;
-        }
-
-        private void ShowMessageBox(string message, MessageType messageType = MessageType.Info, string title = "")
-        {
-            CurrentMessage = new MessageInfo(message, messageType, title);
-            ShowMessage = true;
-        }
-
-        [RelayCommand]
-        private void ShowProductEditDialog(Product product)
-        {
-            if (product == null)
-            {
-                ShowMessageBox("Не выбран товар для редактирования", MessageType.Error);
-                return;
-            }
-
-            EditingProduct = new Product
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Price = product.Price,
-                Description = product.Description,
-                Quantity = product.Quantity
-            };
-            ShowEditDialog = true;
-        }
-
-        [RelayCommand]
-        private void ShowProductAddDialog()
-        {
-            EditingProduct = new Product
-            {
-                Name = "",
-                Description = "",
-                Price = 100.00m,
-                Quantity = 1
-            };
-            ShowAddDialog = true;
-        }
-
-        [RelayCommand]
-        private void SaveProduct()
-        {
-            try
-            {
-                // Проверка названия продукта
-                if (string.IsNullOrWhiteSpace(EditingProduct.Name))
-                {
-                    ShowMessageBox("Название товара не может быть пустым. Пожалуйста, введите название товара.", MessageType.Error);
-                    return;
-                }
-
-                // Проверка цены продукта
-                if (EditingProduct.Price <= 0)
-                {
-                    ShowMessageBox("Цена товара должна быть больше нуля. Пожалуйста, введите корректную цену.", MessageType.Error);
-                    return;
-                }
-
-                // Проверка количества продукта
-                if (EditingProduct.Quantity < 0)
-                {
-                    ShowMessageBox("Количество товара не может быть отрицательным. Пожалуйста, введите корректное количество.", MessageType.Error);
-                    return;
-                }
-
-                // Дополнительная проверка длины названия
-                if (EditingProduct.Name.Length > 100)
-                {
-                    ShowMessageBox("Название товара слишком длинное. Максимальная длина - 100 символов.", MessageType.Error);
-                    return;
-                }
-
-                // Дополнительная проверка длины описания
-                if (EditingProduct.Description != null && EditingProduct.Description.Length > 1000)
-                {
-                    ShowMessageBox("Описание товара слишком длинное. Максимальная длина - 1000 символов.", MessageType.Error);
-                    return;
-                }
-
-                // Проверка на слишком большую цену
-                if (EditingProduct.Price > 1000000)
-                {
-                    ShowMessageBox("Указана слишком высокая цена. Максимальная цена - 1 000 000.", MessageType.Error);
-                    return;
-                }
-
-                // Проверка на слишком большое количество
-                if (EditingProduct.Quantity > 10000)
-                {
-                    ShowMessageBox("Указано слишком большое количество. Максимальное количество - 10 000.", MessageType.Error);
-                    return;
-                }
-
-                if (ShowEditDialog)
-                {
-                    ProductList.UpdateProduct(EditingProduct);
-                    ShowEditDialog = false;
-                    
-                    // Показать уведомление пользователю
-                    ShowMessageBox($"Товар '{EditingProduct.Name}' успешно обновлен", MessageType.Success);
-                }
-                else if (ShowAddDialog)
-                {
-                    EditingProduct.Id = Guid.NewGuid();
-                    ProductList.AddProduct(EditingProduct);
-                    ShowAddDialog = false;
-                    
-                    // Показать уведомление пользователю
-                    ShowMessageBox($"Товар '{EditingProduct.Name}' успешно добавлен", MessageType.Success);
-                }
-            }
-            catch (FormatException ex)
-            {
-                ShowMessageBox($"Ошибка формата данных: {ex.Message}. Пожалуйста, проверьте правильность ввода числовых значений.", MessageType.Error);
-            }
-            catch (OverflowException ex)
-            {
-                ShowMessageBox($"Введенное значение слишком большое или слишком маленькое: {ex.Message}", MessageType.Error);
-            }
-            catch (Exception ex)
-            {
-                ShowMessageBox($"Произошла ошибка при сохранении товара: {ex.Message}", MessageType.Error);
-            }
-        }
-
-        [RelayCommand]
-        private void DeleteProduct(Product product)
-        {
-            if (product == null)
-            {
-                ShowMessageBox("Не выбран товар для удаления", MessageType.Error);
-                return;
-            }
-
-            string productName = product.Name;
-                 
-            // Check if product is in basket
-            var basketItem = BasketList.Items.FirstOrDefault(i => i.Product.Id == product.Id);
-            if (basketItem != null)
-            {
-                ShowMessageBox($"Нельзя удалить товар '{productName}', который находится в корзине", MessageType.Warning);
-                return;
-            }
-
-            ProductList.RemoveProduct(product.Id);
-                 
-            // Показать уведомление пользователю
-            ShowMessageBox($"Товар '{productName}' успешно удален", MessageType.Success);
-        }
-
-        [RelayCommand]
-        private void CloseMessageDialog()
-        {
-            ShowMessage = false;
-        }
-
-        [RelayCommand]
-        private void CloseEditDialog()
-        {
-            ShowEditDialog = false;
-            ShowAddDialog = false;
-        }
-
-        [RelayCommand]
-        private void ShowCheckout()
-        {
             if (BasketList.Items.Count == 0)
             {
                 ShowMessageBox("Ваша корзина пуста. Пожалуйста, добавьте товары перед оформлением заказа.", MessageType.Warning, "Пустая корзина");
                 return;
             }
 
-            CurrentOrder = new Order(); // Создаем новый заказ
-            CurrentOrder.AddItems(BasketList.Items); // Копируем товары из корзины
-            // TotalAmount in CurrentOrder should update automatically due to changes in Order.cs
+            try
+            {
+                // Создаем новый заказ
+                CurrentOrder = new Order(); 
+                
+                // Копируем товары из корзины и проверяем, что они успешно добавлены
+                CurrentOrder.AddItems(BasketList.Items);
+                
+                if (CurrentOrder.Items.Count == 0)
+                {
+                    ShowMessageBox("Ошибка при добавлении товаров в заказ", MessageType.Error);
+                    return;
+                }
 
-            // Сбрасываем ошибки валидации и выбранный метод оплаты
-            NameError = string.Empty;
-            EmailError = string.Empty;
-            PhoneError = string.Empty;
-            AddressError = string.Empty;
-            PaymentError = string.Empty;
-            SelectedPaymentMethod = PaymentMethods.FirstOrDefault() ?? string.Empty;
-            
-            ShowCheckoutDialog = true;
+                // Сбрасываем ошибки валидации и выбранный метод оплаты
+                NameError = string.Empty;
+                EmailError = string.Empty;
+                PhoneError = string.Empty;
+                AddressError = string.Empty;
+                PaymentError = string.Empty;
+                
+                // Устанавливаем метод оплаты по умолчанию
+                SelectedPaymentMethod = PaymentMethods.FirstOrDefault() ?? string.Empty;
+                
+                // Показываем диалог оформления заказа
+                ShowCheckoutDialog = true;
+                TestDialogVisible = true;
+                
+                // Явный вызов уведомлений об изменении свойств
+                OnPropertyChanged(nameof(ShowCheckoutDialog));
+                OnPropertyChanged(nameof(TestDialogVisible));
+            }
+            catch (Exception ex)
+            {
+                ShowMessageBox($"Произошла ошибка при оформлении заказа: {ex.Message}", MessageType.Error);
+            }
         }
         
         [RelayCommand]
         private void CloseCheckoutDialog()
         {
             ShowCheckoutDialog = false;
+            TestDialogVisible = false;
         }
         
         [RelayCommand]
         private void CloseOrderCompletedDialog()
         {
             ShowOrderCompletedDialog = false;
+            
+            // После завершения заказа возвращаемся в основное окно
+            NavigateBack?.Invoke(this, EventArgs.Empty);
         }
         
         [RelayCommand]
@@ -671,24 +462,28 @@ namespace AvaloniaApplication3.ViewModels
         [RelayCommand]
         private void CompleteOrder()
         {
+            // Отладочный вывод
+            Console.WriteLine("CompleteOrder method called");
+            
             if (!ValidateOrderForm())
             {
                 ShowMessageBox("Пожалуйста, исправьте ошибки в форме перед оформлением заказа.", MessageType.Error, "Ошибка валидации");
                 return;
             }
             
-            // CurrentOrder already contains all necessary data and TotalAmount
+            // Текущий заказ уже содержит все необходимые данные
             CurrentOrder.OrderStatus = "Обрабатывается";
-            CurrentOrder.PaymentMethod = SelectedPaymentMethod; // Set selected payment method
+            CurrentOrder.PaymentMethod = SelectedPaymentMethod; // Устанавливаем выбранный метод оплаты
 
-            OrderHistory.AddOrder(new Order
+            // Добавляем заказ в историю заказов через MainViewModel
+            _mainViewModel.OrderHistory.AddOrder(new Order
             {
                 Id = CurrentOrder.Id,
                 CustomerName = CurrentOrder.CustomerName,
                 CustomerEmail = CurrentOrder.CustomerEmail,
                 CustomerPhone = CurrentOrder.CustomerPhone,
                 DeliveryAddress = CurrentOrder.DeliveryAddress,
-                Items = new ObservableCollection<BasketItem>(CurrentOrder.Items.Select(i => new BasketItem(i.Product, i.Quantity))), // Deep copy
+                Items = new ObservableCollection<BasketItem>(CurrentOrder.Items.Select(i => new BasketItem(i.Product, i.Quantity))), // Глубокая копия
                 OrderDate = CurrentOrder.OrderDate,
                 PaymentMethod = CurrentOrder.PaymentMethod,
                 OrderStatus = CurrentOrder.OrderStatus,
@@ -696,8 +491,32 @@ namespace AvaloniaApplication3.ViewModels
             });
 
             ShowCheckoutDialog = false;
+            TestDialogVisible = false;
             ShowOrderCompletedDialog = true;
-            BasketList.ClearBasket(); // Clear basket after successful order
+            BasketList.ClearBasket(); // Очищаем корзину после успешного заказа
+        }
+        
+        [RelayCommand]
+        private void GoBack()
+        {
+            // Notify that we want to go back to the main window
+            NavigateBack?.Invoke(this, EventArgs.Empty);
+        }
+        
+        private void ShowMessageBox(string message, MessageType messageType = MessageType.Info, string title = "")
+        {
+            // Создаем новый объект MessageInfo
+            var newMessage = new MessageInfo(message, messageType, title);
+            CurrentMessage = newMessage;
+            
+            // Включаем отображение сообщения
+            ShowMessage = true;
+        }
+        
+        [RelayCommand]
+        private void CloseMessageDialog()
+        {
+            ShowMessage = false;
         }
     }
-}
+} 

@@ -59,7 +59,13 @@ namespace AvaloniaApplication3.Models
             Id = Guid.NewGuid();
             OrderDate = DateTime.Now;
             GenerateOrderNumber();
-            Items.CollectionChanged += (s, e) => OnPropertyChanged(nameof(TotalAmount));
+            
+            if (_items == null)
+            {
+                _items = new ObservableCollection<BasketItem>();
+            }
+            
+            _items.CollectionChanged += (s, e) => OnPropertyChanged(nameof(TotalAmount));
         }
 
         private void GenerateOrderNumber()
@@ -71,11 +77,28 @@ namespace AvaloniaApplication3.Models
 
         public void AddItems(IEnumerable<BasketItem> items)
         {
-            Items.Clear();
+            if (items == null)
+            {
+                return;
+            }
+            
+            if (_items == null)
+            {
+                _items = new ObservableCollection<BasketItem>();
+                _items.CollectionChanged += (s, e) => OnPropertyChanged(nameof(TotalAmount));
+            }
+            
+            _items.Clear();
+            
             foreach (var item in items)
             {
-                Items.Add(new BasketItem(item.Product, item.Quantity));
+                if (item != null && item.Product != null)
+                {
+                    _items.Add(new BasketItem(item.Product, item.Quantity));
+                }
             }
+            
+            OnPropertyChanged(nameof(TotalAmount));
         }
 
         public void ClearItems()

@@ -31,6 +31,10 @@ public partial class App : Application
                 var mainWindow = new MainWindow();
                 var viewModel = new MainWindowViewModel();
                 mainWindow.DataContext = viewModel;
+                
+                // Set the main window reference in the ViewModel for navigation
+                viewModel.SetMainWindow(mainWindow);
+                
                 desktop.MainWindow = mainWindow;
             }
 
